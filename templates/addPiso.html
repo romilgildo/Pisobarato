@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load bootstrap %}
+<br><br>
+
+<script src="http://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places"></script>
+ <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+ <script src="../static/js/typeahead.js"></script>
+ <script src="../static/js/typeahead-addresspicker.js"></script>
+
+ <style>
+.tt-input{
+    width: 443px;
+}
+
+.tt-query { /* UPDATE: newer versions use tt-input instead of tt-query */
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+    color: #999
+}
+
+.tt-dropdown-menu {
+    width: 422px;
+    margin-top: 6px;
+    padding: 8px 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 5px 10px rgba(0,0,0,.2);
+}
+
+.tt-suggestion {
+    padding: 3px 20px;
+    font-size: 12px !important;
+    line-height: 24px;
+}
+
+.tt-suggestion.tt-is-under-cursor { /* UPDATE: newer versions use .tt-suggestion.tt-cursor */
+    color: #fff;
+    background-color: #0097cf;
+
+}
+
+.tt-suggestion p {
+    font-size: 12px !important;
+    line-height: 14px !important;
+    margin: 0;
+}
+ </style>
+<script type="text/javascript">
+
+$( function() {
+	//instantiate the typeahead UI
+	var addressPicker = new AddressPicker();
+	$('#address').typeahead(null, {
+	  displayKey: 'description',
+	  source: addressPicker.ttAdapter()
+	});
+	
+	//Bind some event to update map on autocomplete selection
+	$('#address').bind("typeahead:selected", addressPicker.updateMap);
+	$('#address').bind("typeahead:cursorchanged", addressPicker.updateMap);
+	
+	// Proxy inputs typeahead events to addressPicker
+	addressPicker.bindDefaultTypeaheadEvent($('#address'))
+
+	// Listen for selected places result
+	$(addressPicker).on('addresspicker:selected', function (event, result) {
+	  $('#id_lat').val(result.lat());
+	  $('#id_lng').val(result.lng());
+	  $('#id_direccion').val(document.getElementById('address').value);
+	});
+});
+
+
+</script>
+    <div class="jumbotron">
+        <div class="container" style="max-width:35%">
+<form class="form" method="post" enctype="multipart/form-data" action="{% url 'addPiso' %}"  >
+
+    {% csrf_token %}
+        {% if form.errors %}
+        <p>{{ form.errors }}</p>
+    {% endif %}
+    
+    {{ form.titulo|bootstrap }}
+    {{ form.tipo|bootstrap }}
+    {{ form.precio|bootstrap }}
+    
+ 
+    <div class="form-group">
+        <label for="id_direccion" class="control-label">Direccion</label>
+        <div>
+    		<input class="form-control" id="address" type="text">
+    	</div>
+    </div>
+    
+    {{ form.descripcion|bootstrap }}
+    {{ form.fecha_registro|bootstrap }}
+    <div class="form-group">
+        <label for="id_image" class="control-label">Image</label>
+        <div>
+    		 <input id="id_image" type="file" name="image">
+    	</div>
+    </div>
+    
+    <div style="visibility:collapse;height:0">
+    	<input name="lng" id="id_lng">
+    	<input name="lat" id="id_lat">
+    	<input name="direccion" id="id_direccion">
+    </div>
+    <input class="btn btn-primary" type="submit"/>
+	</div>
+         
+    
+	</form>
+</div>
+                </div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load bootstrap %}
+    <br><br>
+    <style>
+    p.help-block {
+    visibility: hidden;
+    height: 0;
+    width: 0;
+    }
+    </style>
+    <div class="jumbotron">
+        <div class="container" style="max-width: 35%">
+            <form role="form" class="form" method="post" action="{% url 'registroUsuario' %}">
+                {% csrf_token %}
+                
+                {{ form|bootstrap }}
+                <div class="form-group">
+                    <div class="col-sm-12">
+                         <input class="btn btn-primary" type="submit" value="login"/>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+ 
+    {% if form.errors %}
+        <p>{{ form.errors }}</p>
+    {% endif %}
+ 
+{% endblock %}

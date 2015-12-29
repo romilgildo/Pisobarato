@@ -1,0 +1,136 @@
+{% with map.latitude|stringformat:"f" as lat %}
+{% with map.longitude|stringformat:"f" as long %}
+
+
+{% block api_js %}
+	<!-- Google Maps API javascript -->
+	<script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+{% endblock %}
+
+
+{% block html %}
+	<!-- HTML map container -->
+
+	<div id="map-canvas-{{ map.pk }}"
+		{% if width and map.latitude and not map.geocode_error %}
+			style="width: {{ width }}px; height: {{ height }}px;"
+		{% endif %}
+
+		class="easy-map-googlemap">
+			{% block noscript %}
+				<noscript>
+					<img alt="Map of {{ map.address }}" src="https://maps.google.com/maps/api/staticmap?center={{ lat }},{{ long }}&zoom={{ zoom }}&markers={{ lat }},{{ long }}&size={{ width }}x{{ height }}&sensor=false">
+				</noscript>
+			{% endblock noscript %}
+
+			{% if map.geocode_error %}<!-- geocoding error -->{% endif %}
+	</div>
+	
+{% endblock %}
+
+{% block map_js %}
+
+<script type="text/javascript">
+
+var markers = [];
+
+
+	function leer_json_pisos(map){
+
+		$.getJSON("{% url 'pisos' %}", function(json1) {
+			$.each(json1, function(key, data) {
+				var contentString = "";
+				var infowindow = new google.maps.InfoWindow;
+				var i = 0;
+				var latLng = new google.maps.LatLng(data.fields.lat, data.fields.lng);
+
+	            // Creating a marker and putting it on the map
+	            var marker = new google.maps.Marker({
+	            	position: latLng,
+	            	title: data.fields.titulo,
+	            });
+
+				contentString = '<div id="content">'+
+					'<div id="elemento">'+
+					'<h3>'+ data.fields.titulo +'</h3>'+
+					'<p>'+ data.fields.descripcion + '</p>'+
+					'<p> Direccion: '+ data.fields.direccion + '</p>'+
+					'<p>Precio: <b>'+ data.fields.precio + '€</b></p>'+
+					'<p>Añadido el '+ data.fields.fecha_registro + '</p>'
+					+'</div>';
+
+
+
+				$.getJSON("piso"+data.pk+".json", function(json2) {
+					$.each(json2, function(key2, data2) {
+						contentString += '<a href=/media/'+data2.fields.pic+'><img width=100 src=/media/'+data2.fields.pic+'></a>';
+					});
+				});
+
+				$.getJSON("id"+data.fields.user+".json", function(json3) {
+					$.each(json3, function(key3, data3) {
+						contentString += '<p><a href="mailto:'+data3.fields.email+'?Subject=Pisobaraton.com" target="_top">Contactar</a></p>';
+					});
+				});
+
+	            marker.setMap(map);
+	            markers.push(marker);
+
+	            //---------
+
+				var bounds = new google.maps.LatLngBounds();
+
+				for(i=0;i<markers.length;i++) {
+					bounds.extend(markers[i].getPosition());
+				}
+
+				map.fitBounds(bounds);
+
+	            //---------
+
+	            google.maps.event.addListener(marker, 'click', (function(marker, i) {
+	            	return function() {    		
+	            		infowindow.setContent(contentString);
+	            		infowindow.open(map, marker);
+	            	}
+	            })(marker, i));
+	            i = i + 1;
+
+
+	        });
+		});
+	}
+
+	<!-- Map creation script -->
+	
+	function initialize_map_{{ map.pk }}() {
+		var latlng = new google.maps.LatLng({{ lat }}, {{ long }});
+		var mapElem = document.getElementById("map-canvas-{{ map.pk }}");
+
+
+		{% block map_options_js %}
+			var mapOptions = {
+				zoom: {{ zoom }},
+				center: latlng,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			};
+		{% endblock %}
+
+		var map = new google.maps.Map(mapElem, mapOptions);
+
+		leer_json_pisos(map);
+
+	}
+
+	{% block map_loading_js %}
+		// initialize the map after page loading
+		google.maps.event.addDomListener(window, 'load', initialize_map_{{ map.pk }});
+	{% endblock %}
+</script>
+
+{% endblock %}
+
+{% endwith %}
+
+{% endwith %}
